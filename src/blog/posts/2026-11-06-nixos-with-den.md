@@ -176,6 +176,34 @@ den.aspects.firefox.includes = [
 The `impermanence` aspect then collects everything and passes it to the impermanence module. If I
 remove Firefox, `.mozilla` isn't kept anymore.
 
+## NixOS and Home Manager together
+
+In a plain NixOS config, system settings and Home Manager settings live in two separate module
+systems. If one feature needs both, you write two modules and import them in two different places:
+one in the machine's config, the other in `home-manager.users.<name>`.
+
+The dendritic pattern on its own already lets you put both in the same file, as
+`flake.modules.nixos.foo` and `flake.modules.homeManager.foo`, but you still have to import each
+one in the right place yourself.
+
+With den, an aspect can have a `nixos` part and a `homeManager` part, and including the aspect once
+is enough: den applies the NixOS part to the machine and the Home Manager part to its users. My
+impermanence aspect does both:
+
+```nix
+den.aspects.impermanence = {
+  nixos = {persist, lib, ...}: {
+    environment.persistence."/persist".directories =
+      lib.concatMap (p: p.nixos.directories or []) persist;
+  };
+
+  homeManager = {persist, lib, ...}: {
+    home.persistence."/persist".directories =
+      lib.concatMap (p: p.home.directories or []) persist;
+  };
+};
+```
+
 ## Machines and users
 
 den makes a difference between a machine, a user, and a user on a specific machine. On my laptop,
@@ -221,8 +249,7 @@ top of the NixOS module system, and when something goes wrong the errors can be 
 
 den also looks at the names of a function's arguments (`host`, `user`…) to decide where to apply
 it. So replacing `{host, ...}` with `_` changes what the code does, even though linters like
-deadnix suggest doing exactly that when the argument isn't used. I left comments in my config about
-it.
+deadnix suggest doing exactly that when the argument isn't used.
 
 Finally, den is still young and changes quite a lot.
 
