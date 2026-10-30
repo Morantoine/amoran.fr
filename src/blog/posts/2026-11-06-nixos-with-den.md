@@ -1,44 +1,44 @@
 ---
-title: One file per feature, my NixOS fleet with den
-description: How den's aspects let me describe three machines and fifty-odd services by feature instead of by host.
+title: Organising my NixOS config with den
+description: How I use den to organise my NixOS config by feature instead of by machine.
 ---
 
-My NixOS config runs three machines: **balrog**, my laptop; **cyboogie**, a home server with
-around fifty self-hosted services; and **gila**, a small box whose job is to watch cyboogie.
-Since moving the whole thing to [den](https://github.com/denful/den), adding a service to the
-server is usually one file of twenty lines, and the reverse proxy, firewall, uptime monitoring,
-dashboard and backups of state all follow from it.
+In my [last post](/blog/why-nixos/) I explained why I use NixOS on my laptop and my servers. This
+one is about how the config itself is organised. It's managed with
+[den](https://github.com/denful/den), and I think it's a really nice way to structure a NixOS
+config once you have more than one machine.
 
-This post is about why that works.
+## The problem
 
-<!-- TODO(Antoine): one or two sentences on what the config looked like before den and what annoyed you. -->
+A common way to organise a NixOS config is one folder per machine, each with its own
+`configuration.nix` that imports shared modules. That works, but it gets messy when one feature
+needs to touch several parts of the system.
 
-## The problem with organising by host
-
-The usual NixOS layout is one directory per machine, each with a `configuration.nix` that
-imports shared modules. That works until a single feature has to touch several parts of the
-system. Take a web service on my server. To run it properly I need:
+For example, when I add a web service to my server, I need:
 
 - the service itself, often a container;
-- a Traefik router, maybe behind the VPN or behind single sign-on;
-- a firewall rule, if it listens on a public port;
-- an uptime check in Gatus;
+- a route in Traefik, my reverse proxy, sometimes restricted to my VPN or behind single sign-on;
+- sometimes a firewall rule;
+- an uptime check in Gatus, my monitoring tool;
 - a tile on my Homepage dashboard;
-- its state declared as persistent, because the root filesystem is wiped on every boot.
+- the folders it needs to keep across reboots, because my machines erase their root filesystem on
+  boot.
 
-In a host-centric config those six things live in six different files, and removing the service
-means remembering all six. In den they live in one place, next to each other.
+With a config organised by machine, these things end up in different files, and when you remove the
+service you have to remember to clean up all of them. With den, everything about the service is in
+one place.
 
-## Aspects and hosts
+## Aspects
 
-den builds on the *dendritic* pattern: every `.nix` file under `modules/` is a flake-parts
-module, and [import-tree](https://github.com/denful/import-tree) loads them all. There is no
-import list to maintain. Files starting with `_`, like `_hardware.nix`, are skipped.
+den is based on the "dendritic" pattern. Every `.nix` file in my `modules/` folder is a
+[flake-parts](https://flake.parts/) module, and [import-tree](https://github.com/denful/import-tree)
+loads all of them automatically, so I never have to maintain a list of imports. Files whose name
+starts with `_`, like `_hardware.nix`, are skipped.
 
-On top of that, den gives you **aspects**: named bundles of configuration that can carry NixOS
-options, Home Manager options and a list of other aspects they include. Hosts and users are
-declared as data. A host then becomes little more than the list of features it has. Here is
-gila, trimmed:
+On top of that, den adds **aspects**. An aspect is a named piece of configuration. It can contain
+NixOS options, Home Manager options, and a list of other aspects to include. Machines and users are
+declared separately, and a machine is basically the list of aspects it uses. This is gila, my
+monitoring server, a bit shortened:
 
 ```nix
 den.hosts.x86_64-linux.gila.users.antoine = {};
@@ -55,18 +55,18 @@ den.aspects.gila.includes = [
 ];
 ```
 
-cyboogie's list is longer (59 entries) but reads the same way. If I want to know what runs on
-a machine, I read one list.
+My main server has the same kind of list, just longer (59 entries). To see what runs on a machine,
+I only need to read that list.
 
-## Parametric aspects: writing the boring part once
+## Reusable aspects
 
-Aspects can be functions. den calls them "batteries" when they are meant to be reused, and you
-can write your own under `den.provides`, then use them as `den._.<name>`.
+Aspects can also be functions that take arguments. den calls these "batteries", and you can write
+your own under `den.provides`, then use them as `den._.<name>`.
 
-Mine is called `proxied-service`. It takes a subdomain and a port, plus a few options, and
-produces the Traefik router and backend, an optional VPN-only gate, an optional Kanidm OIDC gate
-(with a bypass route for VPN clients), a Gatus endpoint and a Homepage entry. My whole
-Vaultwarden aspect is this:
+The one I use the most is called `proxied-service`. You give it a subdomain and a port, plus a few
+options, and it creates the Traefik route, the VPN restriction if needed, the single sign-on with
+Kanidm if needed, the Gatus check and the Homepage entry. With it, my whole Vaultwarden config looks
+like this:
 
 ```nix
 den.aspects.vaultwarden = {
@@ -91,15 +91,15 @@ den.aspects.vaultwarden = {
 };
 ```
 
-41 of my aspects go through `proxied-service`. Containers use a second battery,
-`media-container`, which fills in the PUID/PGID/timezone defaults, the shared Podman network and
-the sops environment file. When I changed how OIDC is wired into Traefik, I changed one file.
+41 of my aspects use `proxied-service`. I also have one for containers, `media-container`, which
+sets the usual user and timezone variables, the shared Podman network and the secrets file. If I
+want to change how all my services are exposed, I only change one file.
 
-## Aspects that talk to each other
+## Aspects that send data to each other
 
-Look at the Vaultwarden example again: it never mentions Gatus or Homepage, yet it shows up in
-both. That works through what den calls **quirks**: named channels that any aspect can write to
-and another aspect can read as a module argument. I declare them once:
+You might have noticed that the Vaultwarden aspect never mentions Gatus or Homepage, but it still
+appears in both. This works with what den calls **quirks**. A quirk is like a named list that any
+aspect can add to, and that another aspect can read. I declare mine once:
 
 ```nix
 den.quirks.gatus-endpoint.description = "Gatus monitoring endpoint contributions from service aspects.";
@@ -107,7 +107,7 @@ den.quirks.homepage-entry.description = "Homepage dashboard entry contributions 
 den.quirks.firewall-port.description  = "Firewall port contributions from service aspects.";
 ```
 
-A service writes to them (here, through `proxied-service`):
+A service adds an entry (here through `proxied-service`):
 
 ```nix
 gatus-endpoint = {
@@ -118,7 +118,7 @@ gatus-endpoint = {
 };
 ```
 
-and the Gatus aspect collects everything that was written, from every aspect on that host:
+and the Gatus aspect receives every entry from the machine as an argument:
 
 ```nix
 den.aspects.gatus.nixos = {gatus-endpoint, ...}: {
@@ -126,20 +126,20 @@ den.aspects.gatus.nixos = {gatus-endpoint, ...}: {
 };
 ```
 
-The firewall works the same way. The WireGuard aspect says `firewall-port.udp = [5553];`, and
-the host opens whatever its aspects asked for:
+The firewall works the same way. My WireGuard aspect adds `firewall-port.udp = [5553];`, and the
+server opens all the ports its aspects asked for:
 
 ```nix
 allowedUDPPorts = lib.concatMap (p: p.udp or []) firewall-port;
 ```
 
-So the dashboard, the monitoring and the open ports are always exactly what is installed. When I
-drop a service from cyboogie's list, its tile, its uptime check and its port go with it.
+So my dashboard, my monitoring and my open ports always match what is actually installed. When I
+remove a service from the list, its tile, its check and its port go away with it.
 
-### Across machines
+### Between machines
 
-Quirks can also cross host boundaries, using den's **policies**. Each machine declares its own
-WireGuard peer in its own host file:
+With den's **policies**, this also works across machines. Each machine declares its own WireGuard
+peer in its own file:
 
 ```nix
 den.aspects.gila.wireguard-peer = {
@@ -148,7 +148,7 @@ den.aspects.gila.wireguard-peer = {
 };
 ```
 
-and the WireGuard server aspect uses a policy to collect the peers of every host in the fleet:
+and the WireGuard server collects the peers of all my machines:
 
 ```nix
 den.policies.fleet-wireguard-peers = _: [
@@ -158,16 +158,14 @@ den.policies.fleet-wireguard-peers = _: [
 ];
 ```
 
-A new machine joins the VPN by declaring its key next to the rest of its config. The server's
-peer list is never edited by hand.
+To add a new machine to the VPN, I declare its key in its own config, and I don't need to edit the
+server's list of peers.
 
-## Impermanence without a giant list
+## Impermanence
 
-All my machines wipe their root filesystem on boot, so every path that should survive has to be
-declared. In most configs I've seen, that becomes one long list in the host file that slowly
-drifts away from reality.
-
-With den, each aspect declares what it needs. Firefox, for example:
+As I said in the last post, my machines erase their root filesystem on every boot, so every folder
+that needs to be kept has to be declared. With den, each aspect declares its own folders. For
+Firefox:
 
 ```nix
 den.aspects.firefox.includes = [
@@ -175,15 +173,13 @@ den.aspects.firefox.includes = [
 ];
 ```
 
-The `impermanence` aspect is a pure collector: it reads the `persist` quirk and turns it into
-`environment.persistence` and `home.persistence`. A policy in `den.nix` broadcasts the
-Home Manager part to every user on the host. Remove Firefox, and `.mozilla` stops being
-persisted.
+The `impermanence` aspect then collects everything and passes it to the impermanence module. If I
+remove Firefox, `.mozilla` isn't kept anymore.
 
-## Hosts and users
+## Machines and users
 
-den knows the difference between "this host", "this user" and "this user on this host". On my
-laptop, the desktop belongs to me rather than to the machine, so it goes under `_.antoine`:
+den makes a difference between a machine, a user, and a user on a specific machine. On my laptop,
+the desktop is configured for my user on that machine, under `_.antoine`:
 
 ```nix
 den.aspects.balrog._.antoine.includes = [
@@ -194,8 +190,8 @@ den.aspects.balrog._.antoine.includes = [
 ];
 ```
 
-and an aspect can ask for the user it is being applied to. My Git config reads my name and
-e-mail from the user declaration instead of hard-coding them:
+An aspect can also ask which user it's being applied to. My Git config takes my name and email from
+my user declaration instead of writing them again:
 
 ```nix
 den.aspects.git = {user, ...}: {
@@ -206,37 +202,35 @@ den.aspects.git = {user, ...}: {
 };
 ```
 
-## Inputs live next to the code that uses them
+## Flake inputs
 
-The last piece is [flake-file](https://github.com/denful/flake-file). Instead of one big
-`inputs` block, each module declares the inputs it needs, and `flake.nix` is generated from them
-with `nix run .#write-flake`. The impermanence aspect starts with:
+The last tool I use is [flake-file](https://github.com/denful/flake-file). Instead of writing all
+the inputs in `flake.nix`, each module declares the inputs it needs, and `flake.nix` is generated
+with `nix run .#write-flake`. For example, my impermanence aspect starts with:
 
 ```nix
 flake-file.inputs.impermanence.url = "github:nix-community/impermanence";
 ```
 
-so deleting an aspect also deletes its input.
+If I delete the aspect, the input goes away too.
 
-## What it costs
+## The downsides
 
-It isn't free.
+There's more to learn than with a classic config: aspects, batteries, quirks and policies come on
+top of the NixOS module system, and when something goes wrong the errors can be hard to follow.
 
-- **More to learn.** Aspects, batteries, quirks and policies are four new ideas on top of the
-  module system, and errors come back through several layers of functions.
-- **Argument names matter.** den looks at which arguments a function asks for (`host`, `user`)
-  to decide where to apply it. Replacing `{host, ...}` with `_` silently changes the meaning,
-  and linters like deadnix will happily suggest exactly that. My config has comments warning
-  my future self about it.
-- **It moves.** den is young and its API is still changing. Policies and pipes are recent, and
-  I've had to follow along.
+den also looks at the names of a function's arguments (`host`, `user`…) to decide where to apply
+it. So replacing `{host, ...}` with `_` changes what the code does, even though linters like
+deadnix suggest doing exactly that when the argument isn't used. I left comments in my config about
+it.
 
-For a single laptop, I'm not sure I'd bother. For a fleet where one service touches the proxy,
-firewall, monitoring, dashboard, persistence and VPN, it is the first setup where adding or
-removing something doesn't leave pieces behind.
+Finally, den is still young and changes quite a lot.
 
-## Links
+## In summary
 
-- [den](https://github.com/denful/den), and vic's example config [vix](https://tangled.org/oeiuwq.com/vix)
-- [import-tree](https://github.com/denful/import-tree) and [flake-file](https://github.com/denful/flake-file)
-- [flake-parts](https://flake.parts/)
+For a single machine, a normal config is probably enough. But with a server running many services
+and several machines that share things, den makes it much easier to add or remove something
+without forgetting a piece somewhere. If you want to see a complete example, the author of den
+shares his own config, [vix](https://tangled.org/oeiuwq.com/vix).
+
+Thanks for reading!
