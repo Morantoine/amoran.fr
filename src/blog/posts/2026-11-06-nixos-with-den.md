@@ -20,9 +20,7 @@ For example, when I add a web service to my server, I need:
 - a route in Traefik, my reverse proxy, sometimes restricted to my VPN or behind single sign-on;
 - sometimes a firewall rule;
 - an uptime check in Gatus, my monitoring tool;
-- a tile on my Homepage dashboard;
-- the folders it needs to keep across reboots, because my machines erase their root filesystem on
-  boot.
+- a tile on my Homepage dashboard.
 
 With a config organised by machine, these things end up in different files, and when you remove the
 service you have to remember to clean up all of them. With den, everything about the service is in
@@ -163,7 +161,7 @@ server's list of peers.
 
 ## Impermanence
 
-As I said in the last post, my machines erase their root filesystem on every boot, so every folder
+As I said in the last post, my laptop erases its root filesystem on every boot, so every folder
 that needs to be kept has to be declared. With den, each aspect declares its own folders. For
 Firefox:
 
