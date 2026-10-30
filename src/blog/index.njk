@@ -1,0 +1,20 @@
+---
+layout: base.njk
+title: Blog
+section: blog
+---
+<h1>Blog</h1>
+<p class="role">Subscribe with <a href="/blog/feed.xml">RSS</a>.</p>
+
+{%- if collections.posts and collections.posts.length %}
+<ul class="post-list">
+  {%- for post in collections.posts | reverse %}
+  <li>
+    <time datetime="{{ post.date | isoDate }}">{{ post.date | readableDate }}</time>
+    <a href="{{ post.url }}">{{ post.data.title }}</a>
+  </li>
+  {%- endfor %}
+</ul>
+{%- else %}
+<p class="post-list">No posts yet.</p>
+{%- endif %}

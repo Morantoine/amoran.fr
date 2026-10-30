@@ -1,0 +1,14 @@
+---
+layout: base.njk
+section: blog
+---
+<article class="post">
+  <header>
+    <h1>{{ title }}</h1>
+    <p class="role"><time datetime="{{ page.date | isoDate }}">{{ page.date | readableDate }}</time></p>
+  </header>
+  {{ content | safe }}
+</article>
+<footer>
+  <p><a href="/blog/">All posts</a> · <a href="/blog/feed.xml">RSS</a></p>
+</footer>

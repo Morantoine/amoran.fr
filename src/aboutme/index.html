@@ -1,0 +1,86 @@
+---
+layout: base.njk
+title: About
+section: about
+---
+<header class="intro">
+  <h1>Antoine Moran</h1>
+  <p class="role">PhD student, CEA-Leti &amp; LIX (École polytechnique)</p>
+  <p class="links">
+    <a href="mailto:contact@mail.amoran.fr">Email</a>
+    <a href="https://fr.linkedin.com/in/antoine-moran">LinkedIn</a>
+    <a href="/cv.pdf">CV (PDF)</a>
+  </p>
+</header>
+
+<section id="about">
+  <h2>About</h2>
+  <p>
+    I am a PhD student at CEA-Leti (Université Grenoble Alpes) and LIX (École polytechnique,
+    Institut Polytechnique de Paris). Before the PhD, I studied applied mathematics at
+    Grenoble INP-Ensimag, then completed a master’s degree in cybersecurity run jointly by
+    Ensimag and Université Grenoble Alpes.
+  </p>
+</section>
+
+<section id="research">
+  <h2>Research</h2>
+  <p>
+    My thesis evaluates post-quantum cryptographic implementations against advanced hardware
+    attacks. The work centers on soft-analytical side-channel attacks (SASCA), which combine
+    power or electromagnetic measurements with belief propagation on a model of the targeted
+    computation to recover secrets.
+  </p>
+  <p>
+    I apply these attacks to post-quantum schemes on FPGA and microcontrollers, with two main
+    targets: the Reed-Muller decoder of HQC, where the Fast Hadamard Transform leaks information
+    about the shared secret, and the SHA-2/HMAC primitives used for key derivation in many
+    post-quantum protocols. Part of the work also covers countermeasures, including an analysis
+    of redundant number representations as a way to limit these attacks on HQC.
+  </p>
+
+  <h3>Publications</h3>
+  <ul class="entries">
+    <li>
+      <p><a href="https://tches.iacr.org/index.php/TCHES/article/download/13147/12697/17593">Soft Analytical Side-Channel Attacks on SHA-2 and HMAC</a></p>
+      <p class="meta"><em>IACR Transactions on Cryptographic Hardware and Embedded Systems</em> (CHES 2026)</p>
+    </li>
+    <li>
+      <p><a href="https://eprint.iacr.org/2024/440">Secret and Shared Keys Recovery on Hamming Quasi-Cyclic with SASCA</a></p>
+      <p class="meta"><em>Designs, Codes and Cryptography</em>, 2025</p>
+    </li>
+  </ul>
+
+  <h3>Other</h3>
+  <ul class="entries">
+    <li>
+      <p>Contributor to the belief-propagation framework of <a href="https://github.com/CEA-Leti/secbench">Secbench</a>, CEA-Leti’s open-source side-channel characterization platform.</p>
+    </li>
+  </ul>
+</section>
+
+<section id="cv">
+  <h2>CV</h2>
+
+  <h3>Experience</h3>
+  <ul class="timeline">
+    <li><span class="when">2023 – now</span><span>Doctoral researcher in hardware security, CEA-Leti</span></li>
+    <li><span class="when">2025 – 2026</span><span>Instructor, C programming, Grenoble INP-Ensimag</span></li>
+    <li><span class="when">2022</span><span>Research intern, LIG: automated machine-log factoring</span></li>
+    <li><span class="when">2022</span><span>Specialization project, CEA-Leti / Ensimag: AES key enumeration on GPU</span></li>
+  </ul>
+
+  <h3>Education</h3>
+  <ul class="timeline">
+    <li><span class="when">2023 – now</span><span>PhD in hardware security, CEA-Leti &amp; LIX</span></li>
+    <li><span class="when">2022 – 2023</span><span>M.Sc. in Cybersecurity (Advanced Cryptography), Université Grenoble Alpes / Grenoble INP-Ensimag</span></li>
+    <li><span class="when">2020 – 2023</span><span>Engineering degree, Computer Science &amp; Applied Mathematics, Grenoble INP-Ensimag</span></li>
+    <li><span class="when">2018 – 2020</span><span>Classes préparatoires MPSI / MP*, Lycée Michel de Montaigne, Bordeaux</span></li>
+  </ul>
+
+  <p class="full-cv">The full CV is <a href="/cv.pdf">here as a PDF</a>.</p>
+</section>
+
+<footer>
+  <p>Last updated October 2026</p>
+</footer>
