@@ -6,6 +6,7 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("src/style.css");
   eleventyConfig.addPassthroughCopy("src/cv.pdf");
   eleventyConfig.addPassthroughCopy("src/CNAME");
+  eleventyConfig.addPassthroughCopy("src/blog/img");
   // Math in blog posts: $inline$ and $$display$$, rendered at build time
   eleventyConfig.addPassthroughCopy({
     "node_modules/katex/dist/katex.min.css": "katex/katex.min.css",

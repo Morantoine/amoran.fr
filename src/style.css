@@ -107,6 +107,13 @@ footer {
 }
 .post-list time { color: var(--muted); font-variant-numeric: tabular-nums; }
 
+.post-banner {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin-bottom: 32px;
+}
 .post h1 { margin-bottom: 2px; }
 .post header { margin-bottom: 36px; }
 .post h2 { margin: 40px 0 12px; }

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% if title %}{{ title }} · {% endif %}Antoine Moran</title>
   <meta name="description" content="{{ description or 'Antoine Moran, PhD student at CEA-Leti and LIX, working on side-channel attacks against post-quantum cryptography.' }}">
+  {% if banner %}<meta property="og:image" content="https://amoran.fr{{ banner }}">{% endif %}
   <link rel="alternate" type="application/atom+xml" href="/blog/feed.xml" title="Antoine Moran — Blog">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
