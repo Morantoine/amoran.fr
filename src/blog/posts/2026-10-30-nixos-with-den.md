@@ -2,6 +2,8 @@
 title: Organising my NixOS config with den
 date: 2026-10-30T12:00:00Z
 description: How I use den to organise my NixOS config by feature instead of by machine.
+banner: /blog/img/den-banner.webp
+bannerAlt: A branching circuit-like line drawn in orange on a warm, blurred background
 ---
 
 In my [last post](/blog/why-nixos/) I explained why I use NixOS on my laptop and my servers. This
